@@ -4,6 +4,8 @@ from app.db.session import engine
 from app.schemas.consumption import HouseholdConsumption
 from app.db.models import Household, Consumption
 from app.db.session import SessionLocal
+from app.services.statistics import get_household_statistics
+
 
 
 app = FastAPI(title="Metering Consumption API")
@@ -55,3 +57,13 @@ def ingest_consumption(payload: HouseholdConsumption):
     finally:
         db.close()
 
+@app.get("/statistics/household/{household_id}")
+def household_statistics(household_id: str):
+    db = SessionLocal()
+    try:
+        stats = get_household_statistics(db, household_id)
+        if not stats:
+            return {"error": "Household not found"}
+        return stats
+    finally:
+        db.close()
