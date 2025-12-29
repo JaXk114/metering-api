@@ -5,6 +5,8 @@ from app.schemas.consumption import HouseholdConsumption
 from app.db.models import Household, Consumption
 from app.db.session import SessionLocal
 from app.services.statistics import get_household_statistics
+from app.services.anomalies import detect_household_anomalies
+
 
 
 
@@ -65,5 +67,19 @@ def household_statistics(household_id: str):
         if not stats:
             return {"error": "Household not found"}
         return stats
+    finally:
+        db.close()
+
+@app.get("/anomalies/household/{household_id}")
+def household_anomalies(household_id: str):
+    db = SessionLocal()
+    try:
+        anomalies = detect_household_anomalies(db, household_id)
+        if anomalies is None:
+            return {"error": "Household not found"}
+        return {
+            "household_id": household_id,
+            "anomalies": anomalies
+        }
     finally:
         db.close()
