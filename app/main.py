@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from datetime import date
 import logging
@@ -20,6 +21,7 @@ Base.metadata.create_all(bind=engine)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("metering-api")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
 #simple health check endpoint
@@ -153,3 +155,13 @@ def list_consumption(
         "offset": offset,
         "items": items,
     }
+
+
+# Endpoint to list all household IDs for UI selection
+@app.get("/households")
+def list_households(db: Session = Depends(get_db)):
+    """
+    Return all household IDs for UI selection.
+    """
+    households = db.query(Household.household_id).all()
+    return [h[0] for h in households]

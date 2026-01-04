@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Consumption Visualisation</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    .charts {
+      display: flex;
+      gap: 30px;
+    }
+    canvas {
+      max-width: 400px;
+      max-height: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Household Consumption Overview</h2>
+
+  <div class="controls">
+    <label>
+      Household:
+      <select id="householdSelect"></select>
+    </label>
+    <button onclick="loadData()">Load</button>
+  </div>
+
+  <div class="charts">
+    <canvas id="timeChart"></canvas>
+    <canvas id="typeChart"></canvas>
+  </div>
+
+  <script>
+    let timeChart;
+    let typeChart;
+
+    async function loadHouseholds() {
+      const res = await fetch("/households");
+      const households = await res.json();
+
+      const select = document.getElementById("householdSelect");
+      select.innerHTML = "";
+
+      households.forEach(id => {
+        const option = document.createElement("option");
+        option.value = id;
+        option.textContent = id;
+        select.appendChild(option);
+      });
+    }
+
+    async function loadData() {
+      const householdId = document.getElementById("householdSelect").value;
+      if (!householdId) return;
+
+      if (timeChart) timeChart.destroy();
+      if (typeChart) typeChart.destroy();
+
+      /* -------- Time-series chart -------- */
+      const consRes = await fetch(`/consumption?household_id=${householdId}&limit=100`);
+      const consData = await consRes.json();
+
+      timeChart = new Chart(document.getElementById("timeChart"), {
+        type: "line",
+        data: {
+          labels: consData.items.map(i => i.consumption_date),
+          datasets: [{
+            label: "Consumption Over Time",
+            data: consData.items.map(i => i.consumption_value),
+            borderColor: "blue",
+            fill: false
+          }]
+        }
+      });
+
+      /* -------- Aggregate chart -------- */
+      const statsRes = await fetch(`/statistics/household/${householdId}`);
+      const stats = await statsRes.json();
+
+      typeChart = new Chart(document.getElementById("typeChart"), {
+        type: "bar",
+        data: {
+          labels: ["Total Consumption"],
+          datasets: [{
+            label: "Total",
+            data: [stats.total_consumption],
+            backgroundColor: "green"
+          }]
+        }
+      });
+    }
+
+    loadHouseholds();
+  </script>
+</body>
+</html>
