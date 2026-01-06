@@ -53,6 +53,6 @@ class HouseholdConsumption(BaseModel):
     )
     consumption: List[ConsumptionItem] = Field(
         ...,
-        min_items=1,
+        min_length=1,
         description="List of consumption records"
     )
